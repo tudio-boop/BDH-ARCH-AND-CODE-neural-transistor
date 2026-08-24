@@ -4,8 +4,15 @@
   gap: 1rem;
 }
 
+/* below ~560px the labels would shrink past legibility, so scroll instead */
+.scroller {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
 .svg {
   width: 100%;
+  min-width: 540px;
   height: auto;
   max-width: 640px;
   overflow: visible;
