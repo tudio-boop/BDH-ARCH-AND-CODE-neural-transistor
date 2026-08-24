@@ -30,7 +30,7 @@ export function Hero() {
             </span>
             <span className="pill">d = {REPO_DEFAULTS.d}</span>
             <span className="pill">{formatCount(TOTAL_PARAMS)} params</span>
-            <span className="pill">state size independent of context</span>
+            <span className="pill">fixed-size state</span>
           </div>
           <div className={styles.actions}>
             <Link className="button" href="/lab">

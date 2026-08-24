@@ -1,7 +1,7 @@
 .egg {
   width: 100%;
   height: auto;
-  max-width: 320px;
+  max-width: 350px;
   overflow: visible;
   filter: drop-shadow(0 32px 60px rgba(255, 122, 47, 0.18));
 }

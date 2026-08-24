@@ -54,6 +54,12 @@ export function RunCard() {
       </div>
 
       <div className={styles.scale} aria-hidden="true">
+        <div className={styles.stepLabels}>
+          <span style={{ left: positionOf(CPU_RUN.lossEnd) }}>
+            step {CPU_RUN.steps}
+          </span>
+          <span style={{ left: positionOf(CPU_RUN.lossStart) }}>step 0</span>
+        </div>
         <div className={styles.track}>
           <div
             className={styles.span}
@@ -76,11 +82,16 @@ export function RunCard() {
           />
         </div>
         <div className={styles.scaleLabels}>
-          <span>{SCALE_MIN.toFixed(1)}</span>
-          <span className={styles.tickLabel}>
-            ln 256 = {UNIFORM_BYTE_LOSS.toFixed(2)} (knows nothing)
+          <span className={styles.scaleMin}>{SCALE_MIN.toFixed(1)}</span>
+          <span
+            className={styles.tickLabel}
+            style={{
+              right: `calc(100% - ${positionOf(UNIFORM_BYTE_LOSS)})`,
+            }}
+          >
+            ln 256 = {UNIFORM_BYTE_LOSS.toFixed(2)}, knows nothing
           </span>
-          <span>{SCALE_MAX.toFixed(1)}</span>
+          <span className={styles.scaleMax}>{SCALE_MAX.toFixed(1)}</span>
         </div>
       </div>
 
