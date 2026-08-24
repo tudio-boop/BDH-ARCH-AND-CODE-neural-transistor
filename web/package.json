@@ -9,6 +9,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "toy:gradcheck": "tsx scripts/gradcheck.ts",
+    "toy:check": "tsx scripts/check-equivalence.ts",
     "toy:train": "tsx scripts/train-toy.ts",
     "toy:export-ref": "tsx scripts/export-reference-case.ts"
   },

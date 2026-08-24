@@ -1,0 +1,33 @@
+.footer {
+  border-top: 1px solid var(--hairline);
+  background: linear-gradient(180deg, transparent, rgba(147, 41, 15, 0.08));
+  padding: 3rem 0 3.6rem;
+  margin-top: 2rem;
+}
+
+.inner {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 860px) {
+  .inner {
+    grid-template-columns: 1.35fr 1fr 1fr;
+    gap: 2.6rem;
+  }
+}
+
+.col p.label {
+  margin-bottom: 0.7rem;
+}
+
+.body {
+  font-size: 0.845rem;
+  line-height: 1.62;
+  color: var(--shell-dim);
+  margin: 0;
+}
+
+.body code {
+  color: var(--ember-pale);
+}
