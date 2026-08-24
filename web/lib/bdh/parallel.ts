@@ -8,13 +8,7 @@
  * two forms is how we check the recurrent implementation is right.
  */
 
-import {
-  invStdOf,
-  layerNorm,
-  matmul,
-  matmulAT,
-  scoresStrictLowerTri,
-} from "./linalg";
+import { invStdOf, layerNorm, matmul, scoresStrictLowerTri } from "./linalg";
 import { ropeApply, type ToyConfig, type ToyParams } from "./model";
 
 export interface LayerCache {
@@ -191,5 +185,3 @@ export function activationSparsity(
   }
   return { x: xPos / total, gate: gatePos / total, y: yPos / total };
 }
-
-export { matmulAT };

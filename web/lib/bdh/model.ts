@@ -43,17 +43,6 @@ export const TOY_CONFIG: ToyConfig = {
   ropeTheta: 65536,
 };
 
-/** The default config of the PyTorch model in this repo, for side-by-side copy. */
-export const REPO_CONFIG = {
-  d: 256,
-  nPerHead: 8192,
-  heads: 4,
-  get n() {
-    return this.nPerHead * this.heads;
-  },
-  layers: 6,
-} as const;
-
 export interface ToyParams {
   /** vocab x d */
   embed: Float32Array;
@@ -84,11 +73,6 @@ export function paramCount(c: ToyConfig): number {
   return Object.values(paramShapes(c)).reduce((t, [a, b]) => t + a * b, 0);
 }
 
-/** The scalable part of the model: the paper's 3nd. */
-export function scalableParamCount(c: { n: number; d: number }): number {
-  return 3 * c.n * c.d;
-}
-
 /** bdh.py initialises every parameter matrix with normal(std=0.02). */
 export function initParams(c: ToyConfig, seed = 1337): ToyParams {
   const rand = mulberry32(seed);
@@ -104,16 +88,6 @@ export function initParams(c: ToyConfig, seed = 1337): ToyParams {
     Dy: make(shapes.Dy[0] * shapes.Dy[1]),
     E: make(shapes.E[0] * shapes.E[1]),
     head: make(shapes.head[0] * shapes.head[1]),
-  };
-}
-
-export function zeroLike(p: ToyParams): ToyParams {
-  return {
-    embed: new Float32Array(p.embed.length),
-    Dx: new Float32Array(p.Dx.length),
-    Dy: new Float32Array(p.Dy.length),
-    E: new Float32Array(p.E.length),
-    head: new Float32Array(p.head.length),
   };
 }
 

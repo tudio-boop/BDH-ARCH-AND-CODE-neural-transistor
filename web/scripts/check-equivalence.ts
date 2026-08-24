@@ -8,7 +8,7 @@
 import { mulberry32 } from "../lib/bdh/linalg";
 import { initParams, ropeFreqs, TOY_CONFIG } from "../lib/bdh/model";
 import { allocCache, forward } from "../lib/bdh/parallel";
-import { createRhoState, rhoFloats, kvCacheFloats, ToySession } from "../lib/bdh/recurrent";
+import { kvCacheFloats, rhoFloats, ToySession } from "../lib/bdh/recurrent";
 
 const config = TOY_CONFIG;
 const T = 48;
@@ -68,5 +68,3 @@ if (!(relative < 1e-4)) {
   process.exit(1);
 }
 console.log("PASS");
-
-void createRhoState;
