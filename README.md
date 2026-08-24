@@ -82,13 +82,13 @@ npm run build      # production build
 The Vercel project's **Root Directory must be `web`**, because the repository
 root is a Python project.
 
-1. Push this repository to GitHub.
-2. Go to [vercel.com/new](https://vercel.com/new) and import the repository.
-3. In the import screen, expand **Root Directory**, set it to `web`, and
-   confirm. Vercel then detects Next.js and fills in the build settings from
-   `web/vercel.json`; nothing else needs configuring, and there are no
-   environment variables or secrets to add.
-4. Deploy.
+1. Go to [vercel.com/new](https://vercel.com/new) and import this repository (or
+   your fork of it).
+2. On the import screen, expand **Root Directory** and set it to `web`.
+3. Leave everything else alone. Vercel reads `web/vercel.json`, which pins the
+   Next.js preset, and the default install and build commands are correct. There
+   are no environment variables or secrets to add.
+4. Deploy. Every route is prerendered as static content.
 
 From the CLI the equivalent is to run Vercel from inside the subdirectory:
 
