@@ -60,6 +60,11 @@ export default function LabPage() {
               three. That multiplication is the whole reason BDH activations end
               up sparse without anything in the loss asking for it.
             </p>
+            <p className="dim">
+              The first byte is a special case worth catching: there is nothing
+              in <code>rho</code> yet, so the gate is exactly zero and{" "}
+              <code>y</code> is empty. The first byte can only write.
+            </p>
           </div>
           <div className="card">
             <h3>The state does not grow</h3>

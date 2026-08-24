@@ -48,6 +48,11 @@ interface RunState {
 
 type Fractions = Record<View, number>;
 
+function signed(delta: number): string {
+  if (Math.abs(delta) < 5e-5) return "no change";
+  return `${delta > 0 ? "+" : "\u2212"}${Math.abs(delta).toFixed(4)}`;
+}
+
 /** Share of positive entries across all layers, for each of the three vectors. */
 function positiveFractions(trace: StepTrace): Fractions {
   let x = 0;
@@ -411,14 +416,14 @@ export function ToyLab() {
                 <tbody>
                   <tr>
                     <td className="dim">shape</td>
-                    <td className="num">
+                    <td className={styles.factValue}>
                       n = {TOY_CONFIG.n}, d = {TOY_CONFIG.d},{" "}
                       {TOY_CONFIG.layers} layers, 1 head
                     </td>
                   </tr>
                   <tr>
                     <td className="dim">parameters</td>
-                    <td className="num">
+                    <td className={styles.factValue}>
                       {formatCount(toyParams)}
                       <span className="dim">
                         {" "}
@@ -429,7 +434,7 @@ export function ToyLab() {
                   </tr>
                   <tr>
                     <td className="dim">trained</td>
-                    <td className="num">
+                    <td className={styles.factValue}>
                       {formatCount(weights.file.training.steps)} steps, block{" "}
                       {weights.file.training.block}, batch{" "}
                       {weights.file.training.batch}
@@ -437,7 +442,7 @@ export function ToyLab() {
                   </tr>
                   <tr>
                     <td className="dim">loss</td>
-                    <td className="num">
+                    <td className={styles.factValue}>
                       {weights.file.training.firstLoss.toFixed(2)} →{" "}
                       {weights.file.training.trainLoss.toFixed(2)} train,{" "}
                       {weights.file.training.valLoss.toFixed(2)} val
@@ -445,18 +450,20 @@ export function ToyLab() {
                   </tr>
                   <tr>
                     <td className="dim">int8 packing</td>
-                    <td className="num">
-                      val {weights.file.training.valLossInt8.toFixed(2)} (
-                      {(
-                        weights.file.training.valLossInt8 -
-                        weights.file.training.valLoss
-                      ).toFixed(3)}
-                      )
+                    <td className={styles.factValue}>
+                      val {weights.file.training.valLossInt8.toFixed(4)}{" "}
+                      <span className="dim">
+                        ({signed(
+                          weights.file.training.valLossInt8 -
+                            weights.file.training.valLoss,
+                        )}{" "}
+                        on the same windows)
+                      </span>
                     </td>
                   </tr>
                   <tr>
                     <td className="dim">y positive</td>
-                    <td className="num">
+                    <td className={styles.factValue}>
                       {(
                         weights.file.training.positiveActivations.y * 100
                       ).toFixed(1)}
@@ -490,10 +497,12 @@ export function ToyLab() {
  * the range itself is printed, so nothing is hidden by the zoom.
  */
 function ActivityStrip({ series, view }: { series: Fractions[]; view: View }) {
-  const values = series.map((f) => f[view]);
-  const shown = values.slice(-160);
-  const low = shown.length > 0 ? Math.min(...shown) : 0;
-  const high = shown.length > 0 ? Math.max(...shown) : 0;
+  const shown = series.map((f) => f[view]).slice(-160);
+  // The very first byte reads an empty rho, so its gate — and therefore y — is
+  // exactly zero. Scaling to that one degenerate value would flatten the rest.
+  const scored = shown.filter((value) => value > 0);
+  const low = scored.length > 0 ? Math.min(...scored) : 0;
+  const high = scored.length > 0 ? Math.max(...scored) : 0;
   const spread = Math.max(high - low, 1e-6);
 
   return (
@@ -511,7 +520,12 @@ function ActivityStrip({ series, view }: { series: Fractions[]; view: View }) {
           <span
             key={index}
             className={styles.activityBar}
-            style={{ height: `${12 + ((value - low) / spread) * 88}%` }}
+            style={{
+              height: `${
+                12 +
+                Math.max(0, Math.min(1, (value - low) / spread)) * 88
+              }%`,
+            }}
           />
         ))}
       </div>

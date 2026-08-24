@@ -3,6 +3,11 @@
   gap: 1.15rem;
 }
 
+/* keep any wide child (the byte strip, the activity chart) from widening the page */
+.lab > * {
+  min-width: 0;
+}
+
 /* ---------- controls ---------- */
 
 .controls {
@@ -300,19 +305,27 @@
 .activityBars {
   display: flex;
   align-items: flex-end;
-  gap: 2px;
+  gap: 1px;
   height: 42px;
   min-width: 0;
   overflow: hidden;
   border-bottom: 1px solid var(--vein-soft);
 }
 
+/* min-width 0 matters: 160 bars with a minimum width would set a floor on how
+   narrow the page can get */
 .activityBar {
-  flex: 1;
-  min-width: 1px;
+  flex: 1 1 0;
+  min-width: 0;
   max-width: 7px;
   background: linear-gradient(180deg, var(--ember-soft), rgba(147, 41, 15, 0.45));
   border-radius: 1px 1px 0 0;
+}
+
+@media (max-width: 720px) {
+  .activityBars {
+    gap: 0;
+  }
 }
 
 /* ---------- bottom ---------- */
@@ -389,11 +402,10 @@
   font-size: 0.66rem;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  white-space: nowrap;
 }
 
-.factTable .num {
+/* deliberately not .table .num, whose nowrap would set a wide minimum width */
+.factValue {
   font-family: var(--font-mono);
   color: var(--shell);
-  white-space: normal;
 }
