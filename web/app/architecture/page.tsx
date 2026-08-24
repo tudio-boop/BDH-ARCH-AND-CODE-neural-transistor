@@ -271,7 +271,10 @@ export default function ArchitecturePage() {
                 <td className="mono">U</td>
                 <td className="mono dim">get_freqs, rope</td>
                 <td className="num dim">—</td>
-                <td>rotates keys and queries by position</td>
+                <td>
+                  applies position to keys and queries — rotation here, though
+                  the paper also allows damping such as ALiBi
+                </td>
               </tr>
               <tr>
                 <td className="mono">x in (R+)^n</td>

@@ -99,7 +99,10 @@ export default function HomePage() {
                 </li>
                 <li>
                   Nothing is evicted. Distant tokens instead drift out of phase
-                  under the rotation that positions apply to keys and queries.
+                  under the rotation applied to keys and queries — and the paper
+                  notes that over long contexts some damping of stale signal is
+                  wanted as well, pairing RoPE with ALiBi. Either way the state
+                  never changes size.
                 </li>
               </ul>
             </div>
