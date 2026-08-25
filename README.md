@@ -79,6 +79,16 @@ npm run build      # production build
 
 ### Deploy on Vercel
 
+> **This demo is internal.** It is meant to be reachable only by the team that
+> owns the Vercel project, so keep Deployment Protection switched on and do not
+> add a public domain. The app sets `noindex, nofollow` and ships a
+> `robots.txt` that disallows every crawler, but protection on the Vercel
+> project is what actually keeps it private. Note that on a Pro plan Vercel
+> Authentication covers previews and production *deployment URLs* but not the
+> production domain itself, so a project whose `*.vercel.app` production alias
+> is assigned is publicly reachable unless you also remove that alias, pause the
+> project, or add the deployment-protection add-on that covers production.
+
 The Vercel project's **Root Directory must be `web`**, because the repository
 root is a Python project.
 
