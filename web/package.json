@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "toy:gradcheck": "tsx scripts/gradcheck.ts",
     "toy:check": "tsx scripts/check-equivalence.ts",
+    "toy:check-webgpu": "deno run --allow-read --unstable-webgpu --unstable-sloppy-imports --no-check scripts/check-webgpu.ts",
     "toy:train": "tsx scripts/train-toy.ts",
     "toy:export-ref": "tsx scripts/export-reference-case.ts"
   },
@@ -22,6 +23,7 @@
     "@types/node": "^26.3.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
+    "@webgpu/types": "^0.1.72",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
   }

@@ -4,30 +4,24 @@ import { SiteFooter } from "./components/SiteFooter";
 import { SiteNav } from "./components/SiteNav";
 import "./globals.css";
 
+/**
+ * This is an internal, team-only demo. It is deliberately not discoverable:
+ * no indexing, no keywords, and no Open Graph card, since those exist only to
+ * make a page circulate publicly. See also app/robots.ts.
+ */
 export const metadata: Metadata = {
   title: {
     default: "Baby Dragon Hatchling — a brain-shaped language model, explained",
     template: "%s — Baby Dragon Hatchling",
   },
   description:
-    "BDH keeps its working memory in synapses instead of a KV cache. Plain-English explainer, a walk through one BDH-GPU layer, the real numbers from a local CPU training run, and a tiny BDH-GPU you can run in your browser.",
-  keywords: [
-    "BDH",
-    "Dragon Hatchling",
-    "BDH-GPU",
-    "linear attention",
-    "state space model",
-    "Hebbian learning",
-    "interpretability",
-    "Pathway",
-  ],
-  openGraph: {
-    title: "Baby Dragon Hatchling — a brain-shaped language model, explained",
-    description:
-      "Working memory as synapses, not a KV cache. With a tiny BDH-GPU that runs in your browser.",
-    type: "website",
+    "Internal demo. BDH keeps its working memory in synapses instead of a KV cache.",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: { index: false, follow: false, noimageindex: true },
   },
-  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {

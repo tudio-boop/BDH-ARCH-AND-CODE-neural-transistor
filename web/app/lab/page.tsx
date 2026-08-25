@@ -24,9 +24,8 @@ export default function LabPage() {
           <h1 className={styles.title}>The hatchling lab</h1>
           <p className="lead" style={{ maxWidth: "64ch" }}>
             A real BDH-GPU — {formatCount(toyParams)} parameters of it — running
-            in this tab in plain JavaScript. No PyTorch, no server, no API call.
-            It reads your prompt one byte at a time, and you can watch which
-            neurons fire for each one.
+            in this tab. No PyTorch, no server, no API call. It reads your prompt
+            one byte at a time, and you can watch which neurons fire for each one.
           </p>
           <p className={`footnote ${styles.note}`}>
             The maths is the same as{" "}
@@ -35,6 +34,15 @@ export default function LabPage() {
             checked against the PyTorch model in <code>bdh.py</code> to within
             float32 rounding, at identical weights, by{" "}
             <code>web/scripts/verify_against_bdh_py.py</code>.
+          </p>
+          <p className={`footnote ${styles.note}`}>
+            There are two implementations of it. If your browser has WebGPU, each
+            byte is one compute dispatch on the GPU — the whole token step, all{" "}
+            {TOY_CONFIG.layers} layers, in a single workgroup. If it does not, the
+            same model runs in JavaScript on the CPU. The chip above the controls
+            says which one you got, and{" "}
+            <Link href="/verify">the backend check</Link> reports how far apart
+            they are.
           </p>
         </div>
       </div>
@@ -50,7 +58,7 @@ export default function LabPage() {
         kicker="How to read it"
         title="What to look for while it runs"
       >
-        <div className="grid grid-3">
+        <div className="grid grid-2">
           <div className="card">
             <h3>Sparsity, not activity</h3>
             <p className="dim">
@@ -73,6 +81,17 @@ export default function LabPage() {
               generate. The KV cache bar next to it keeps climbing. That is the
               architectural claim, in two bars: memory is a property of the model
               you chose, not of the conversation you are having.
+            </p>
+          </div>
+          <div className="card">
+            <h3>Both backends, same picture</h3>
+            <p className="dim">
+              WebGPU changes where the arithmetic happens, not what it computes:
+              the grids and bars are read back from the GPU and mean exactly what
+              they did on the CPU. At n = {TOY_CONFIG.n} the GPU is not here to be
+              faster — a byte is only about 170,000 multiply-adds — but to show
+              that the layer maps onto a compute shader at all, which is the whole
+              claim behind the name BDH-<em>GPU</em>.
             </p>
           </div>
           <div className="card">

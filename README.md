@@ -49,13 +49,26 @@ Three pages:
 | --- | --- |
 | `/` | BDH in plain English — synapse graph versus KV cache, BDH versus BDH-GPU, and a card with the numbers from a local CPU training run |
 | `/architecture` | One BDH-GPU layer, step by step: `Dx` into neuron space, sparse positive activations, the rank-1 update to `rho`, the `Dy` gate, back down through `E` |
-| `/lab` | A 40,960-parameter BDH-GPU running in the browser in plain TypeScript: type a prompt, watch which neurons fire on each byte, and read the continuation |
+| `/lab` | A 40,960-parameter BDH-GPU running in the browser, on the GPU via WebGPU where available: type a prompt, watch which neurons fire on each byte, and read the continuation |
+| `/verify` | Diagnostics: feeds the same bytes through both backends and reports how far apart they are |
 
 The browser model is a real trained model, not a mock. `web/lib/bdh/` is a hand
 port of `bdh.py` (with `n_head=1` and `dropout=0`) implemented twice: the
 token-parallel triangular form that `bdh.py` uses, and the recurrent form that
 carries an explicit `rho` state, which is what makes the "no KV cache" claim
-demonstrable. Both are checked against the PyTorch model:
+demonstrable.
+
+### Two backends
+
+`/lab` runs the recurrent form on **WebGPU** when the browser exposes it, and on
+the **CPU in TypeScript** when it does not. There is nothing to switch on: the
+lab feeds a short prompt through both at startup and only uses the GPU if its
+logits agree with the CPU reference. `web/lib/bdh/webgpu/shader.ts` does the
+whole token step — every layer, then the readout — in a single workgroup, so
+each byte is one dispatch; at n = 256 that shape matters far more than
+arithmetic throughput, since a byte is only about 170,000 multiply-adds.
+
+### Checks
 
 ```bash
 cd web
@@ -63,10 +76,21 @@ npm install
 npm run toy:gradcheck   # backward pass vs finite differences
 npm run toy:check       # recurrent form vs token-parallel form
 npm run toy:export-ref && python3 scripts/verify_against_bdh_py.py   # both vs bdh.py, same weights
+npm run toy:check-webgpu   # WebGPU vs CPU, needs Deno (see below)
 ```
 
-The last one needs `torch` and imports `bdh.py` read-only; it agrees with the
-reference implementation to within float32 rounding (~5e-7 relative).
+The PyTorch comparison needs `torch`, imports `bdh.py` read-only, and agrees
+with the reference implementation to within float32 rounding (~5e-7 relative).
+
+The WebGPU comparison runs under [Deno](https://deno.com), which ships a WebGPU
+implementation, so the GPU path can be checked from a terminal without a browser
+and without adding a native dependency here. Deno is not needed to build, deploy
+or use the site — opening `/verify` in a browser runs the same comparison. On a
+Linux box with no GPU, point Deno at a software Vulkan device:
+
+```bash
+VK_ICD_FILENAMES=/opt/google/chrome/vk_swiftshader_icd.json npm run toy:check-webgpu
+```
 
 ### Run the site locally
 
@@ -78,6 +102,16 @@ npm run build      # production build
 ```
 
 ### Deploy on Vercel
+
+> **This demo is internal.** It is meant to be reachable only by the team that
+> owns the Vercel project, so keep Deployment Protection switched on and do not
+> add a public domain. The app sets `noindex, nofollow` and ships a
+> `robots.txt` that disallows every crawler, but protection on the Vercel
+> project is what actually keeps it private. Note that on a Pro plan Vercel
+> Authentication covers previews and production *deployment URLs* but not the
+> production domain itself, so a project whose `*.vercel.app` production alias
+> is assigned is publicly reachable unless you also remove that alias, pause the
+> project, or add the deployment-protection add-on that covers production.
 
 The Vercel project's **Root Directory must be `web`**, because the repository
 root is a Python project.
