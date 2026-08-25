@@ -1,0 +1,95 @@
+.twoCol {
+  display: grid;
+  gap: clamp(1.6rem, 4vw, 2.8rem);
+  align-items: start;
+}
+
+@media (min-width: 980px) {
+  .twoCol {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+}
+
+.compare {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.compare h3 {
+  margin: 0.35rem 0 0.85rem;
+}
+
+.spacedNote {
+  margin-top: 2rem;
+  margin-bottom: 0;
+}
+
+.spacedNote code {
+  color: var(--gold);
+}
+
+.tableWrap {
+  margin-top: 1.9rem;
+  overflow-x: auto;
+}
+
+.tableWrap code {
+  color: var(--ember-pale);
+  font-size: 0.9em;
+}
+
+.arithmetic {
+  margin-top: 1.9rem;
+}
+
+.arithmetic .label {
+  margin-bottom: 0.7rem;
+}
+
+.arithmetic p.dim {
+  max-width: 74ch;
+  font-size: 0.92rem;
+}
+
+.arithmetic code {
+  color: var(--ember-pale);
+}
+
+.linkCard {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.linkCard:hover {
+  color: inherit;
+  transform: translateY(-2px);
+  border-color: var(--vein);
+}
+
+.linkCard h3 {
+  margin: 0.35rem 0 0.7rem;
+}
+
+.linkCard p {
+  font-size: 0.92rem;
+  flex: 1;
+}
+
+.linkCard code {
+  color: var(--ember-pale);
+}
+
+.linkCta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ember-soft);
+  margin-top: 0.9rem;
+}

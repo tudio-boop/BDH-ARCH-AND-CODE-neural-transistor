@@ -1,0 +1,66 @@
+.hero {
+  padding: clamp(2.6rem, 7vw, 5rem) 0 clamp(2.6rem, 6vw, 4.2rem);
+  overflow: hidden;
+}
+
+.inner {
+  display: grid;
+  gap: clamp(2rem, 5vw, 3.4rem);
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .inner {
+    grid-template-columns: 1.32fr 0.85fr;
+  }
+}
+
+.copy > .label {
+  margin-bottom: 1.1rem;
+}
+
+.title {
+  margin: 0 0 1.15rem;
+}
+
+.title em {
+  font-style: italic;
+  color: var(--ember-soft);
+  text-shadow: 0 0 46px rgba(255, 122, 47, 0.4);
+}
+
+.copy .lead {
+  max-width: 46ch;
+  margin-bottom: 1.5rem;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.9rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.caption {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--shell-faint);
+  text-align: center;
+  max-width: 30ch;
+  margin: 0;
+  line-height: 1.55;
+}

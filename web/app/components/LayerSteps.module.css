@@ -1,0 +1,95 @@
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 1.15rem;
+  padding-bottom: 2.3rem;
+}
+
+@media (min-width: 700px) {
+  .step {
+    grid-template-columns: 62px 1fr;
+    gap: 1.6rem;
+  }
+}
+
+.marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.markerNumber {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--ember-pale);
+  border: 1px solid var(--vein);
+  background: rgba(255, 122, 47, 0.08);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  box-shadow: 0 0 18px -6px rgba(255, 122, 47, 0.7);
+}
+
+.markerLine {
+  flex: 1;
+  width: 1px;
+  background: linear-gradient(180deg, var(--vein), transparent);
+}
+
+.content {
+  min-width: 0;
+  padding-top: 0.15rem;
+}
+
+.title {
+  margin-bottom: 0.7rem;
+}
+
+.body p {
+  font-size: 0.95rem;
+  margin-bottom: 0.8rem;
+}
+
+.body p:last-child {
+  margin-bottom: 1rem;
+}
+
+.code {
+  margin: 0.75rem 0 0;
+  display: flex;
+  gap: 0.7rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}
+
+.codeLabel {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--shell-faint);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  padding: 0.12rem 0.4rem;
+  flex: none;
+}
+
+.code code {
+  color: var(--scale);
+  filter: brightness(1.35);
+  word-break: break-word;
+}

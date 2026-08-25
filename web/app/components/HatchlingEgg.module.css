@@ -1,0 +1,52 @@
+.egg {
+  width: 100%;
+  height: auto;
+  max-width: 350px;
+  overflow: visible;
+  filter: drop-shadow(0 32px 60px rgba(255, 122, 47, 0.18));
+}
+
+.synapse {
+  animation: pulse 4.6s ease-in-out infinite;
+}
+
+.neuron {
+  animation: fire 5.4s ease-in-out infinite;
+}
+
+.crack {
+  filter: drop-shadow(0 0 6px rgba(255, 169, 94, 0.75));
+  animation: glow 6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    stroke-opacity: 0.3;
+    stroke-width: 1.2;
+  }
+  48% {
+    stroke-opacity: 1;
+    stroke-width: 2.3;
+  }
+}
+
+@keyframes fire {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  42% {
+    opacity: 1;
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}

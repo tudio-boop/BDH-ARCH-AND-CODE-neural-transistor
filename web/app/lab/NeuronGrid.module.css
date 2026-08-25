@@ -1,0 +1,42 @@
+.wrap {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: auto;
+  border-radius: 2px;
+  filter: drop-shadow(0 0 20px rgba(255, 122, 47, 0.14));
+}
+
+.meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--shell-faint);
+}
+
+.value {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ember-pale);
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  font-size: 0.62rem;
+  color: var(--shell-faint);
+  margin-left: 0.1rem;
+}

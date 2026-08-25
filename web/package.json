@@ -1,0 +1,28 @@
+{
+  "name": "bdh-hatchling-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Baby Dragon Hatchling (BDH) explainer + in-browser BDH-GPU toy. Deploys to Vercel.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "toy:gradcheck": "tsx scripts/gradcheck.ts",
+    "toy:check": "tsx scripts/check-equivalence.ts",
+    "toy:train": "tsx scripts/train-toy.ts",
+    "toy:export-ref": "tsx scripts/export-reference-case.ts"
+  },
+  "dependencies": {
+    "next": "16.3.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.3.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}

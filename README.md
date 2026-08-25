@@ -36,5 +36,89 @@ To train and sample from the BDH model on a toy language modeling task please do
 1. `pip install -r requirements.txt`
 2. `python train.py`
 
+## Web demo (`web/`)
+
+`web/` holds a self-contained Next.js (App Router) site that explains BDH and
+runs a tiny BDH-GPU in the browser. It is independent of the Python code above:
+it has no PyTorch dependency, adds nothing to `requirements.txt`, and does not
+change how `python train.py` behaves.
+
+Three pages:
+
+| Page | What it is |
+| --- | --- |
+| `/` | BDH in plain English — synapse graph versus KV cache, BDH versus BDH-GPU, and a card with the numbers from a local CPU training run |
+| `/architecture` | One BDH-GPU layer, step by step: `Dx` into neuron space, sparse positive activations, the rank-1 update to `rho`, the `Dy` gate, back down through `E` |
+| `/lab` | A 40,960-parameter BDH-GPU running in the browser in plain TypeScript: type a prompt, watch which neurons fire on each byte, and read the continuation |
+
+The browser model is a real trained model, not a mock. `web/lib/bdh/` is a hand
+port of `bdh.py` (with `n_head=1` and `dropout=0`) implemented twice: the
+token-parallel triangular form that `bdh.py` uses, and the recurrent form that
+carries an explicit `rho` state, which is what makes the "no KV cache" claim
+demonstrable. Both are checked against the PyTorch model:
+
+```bash
+cd web
+npm install
+npm run toy:gradcheck   # backward pass vs finite differences
+npm run toy:check       # recurrent form vs token-parallel form
+npm run toy:export-ref && python3 scripts/verify_against_bdh_py.py   # both vs bdh.py, same weights
+```
+
+The last one needs `torch` and imports `bdh.py` read-only; it agrees with the
+reference implementation to within float32 rounding (~5e-7 relative).
+
+### Run the site locally
+
+```bash
+cd web
+npm install
+npm run dev        # http://localhost:3000
+npm run build      # production build
+```
+
+### Deploy on Vercel
+
+The Vercel project's **Root Directory must be `web`**, because the repository
+root is a Python project.
+
+1. Go to [vercel.com/new](https://vercel.com/new) and import this repository (or
+   your fork of it).
+2. On the import screen, expand **Root Directory** and set it to `web`.
+3. Leave everything else alone. Vercel reads `web/vercel.json`, which pins the
+   Next.js preset, and the default install and build commands are correct. There
+   are no environment variables or secrets to add.
+4. Deploy. Every route is prerendered as static content.
+
+From the CLI the equivalent is to run Vercel from inside the subdirectory:
+
+```bash
+cd web
+npx vercel          # preview deployment
+npx vercel --prod   # production deployment
+```
+
+Root Directory is a **project setting**, not a `vercel.json` field — there is no
+`rootDirectory` key in [the `vercel.json`
+schema](https://openapi.vercel.sh/vercel.json) — so it cannot be committed to
+the repository root, and step 3 is the one manual step. If it is skipped, the
+build fails at framework detection because there is no `package.json` at the
+repository root.
+
+### Regenerating the browser model's weights
+
+The trained weights are committed at `web/public/bdh-toy-weights.json` (int8
+with a scale per row, ~70 KB). To retrain them:
+
+```bash
+cd web
+npm run toy:train -- --steps 4000 --batch 10 --block 128
+```
+
+That downloads the same tiny Shakespeare corpus `train.py` uses, trains
+BDH-GPU(n=256, d=32) with 4 layers using AdamW at the same learning rate, prints
+samples as it goes, and rewrites the weights file along with the training
+metadata the `/lab` page displays.
+
 ## Acknowledgements
 We thank Andrej Karpathy for the [nanoGPT](https://github.com/karpathy/nanoGPT/) code and the tiny Shapespeare dataset used in this demonstration.

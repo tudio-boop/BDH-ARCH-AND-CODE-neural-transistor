@@ -1,0 +1,41 @@
+.figure {
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+/* below ~560px the labels would shrink past legibility, so scroll instead */
+.scroller {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.svg {
+  width: 100%;
+  min-width: 540px;
+  height: auto;
+  max-width: 640px;
+  overflow: visible;
+}
+
+.axisLabel {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  fill: var(--shell-faint);
+}
+
+.operator {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  fill: var(--ember);
+  text-anchor: middle;
+}
+
+.caption {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  fill: var(--shell-faint);
+}
