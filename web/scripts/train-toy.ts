@@ -114,10 +114,20 @@ function sampleBatchInto(data: Bytes): void {
   }
 }
 
+/**
+ * Held-out loss on a fixed set of windows. The RNG is re-seeded per call so
+ * every evaluation sees exactly the same bytes — otherwise comparing float32
+ * against int8-packed weights would just be measuring sampling noise.
+ */
 function evaluate(data: Bytes, batches: number): number {
+  const pick = mulberry32(0xe7a1);
   let total = 0;
   for (let b = 0; b < batches; b++) {
-    sampleBatchInto(data);
+    const start = Math.floor(pick() * (data.length - BLOCK - 1));
+    for (let i = 0; i < BLOCK; i++) {
+      x[i] = data[start + i];
+      y[i] = data[start + i + 1];
+    }
     forward(params, config, freqs, x, cache);
     total += crossEntropy(cache.logits, BLOCK, config.vocab, y, null);
   }
@@ -194,8 +204,8 @@ for (let step = 0; step < STEPS; step++) {
   }
 }
 
-const trainLoss = evaluate(trainData, 20);
-const valLoss = evaluate(valData, 20);
+const trainLoss = evaluate(trainData, 40);
+const valLoss = evaluate(valData, 40);
 sampleBatchInto(valData);
 forward(params, config, freqs, x, cache);
 const sparsity = activationSparsity(cache, config, BLOCK);
@@ -209,13 +219,28 @@ console.log(`sample: ${JSON.stringify(generateSample("To be or ", 120))}`);
 
 const quantized = quantizeParams(params, config);
 
-// How much accuracy the int8 packing costs, measured rather than assumed.
+// What the int8 packing costs, on the same held-out windows as above. The
+// packed weights are the ones the browser actually runs.
 const exact = { ...params };
 for (const key of PARAM_KEYS as readonly ParamKey[]) {
   params[key] = quantized.dequantized[key];
 }
-const valLossQuantized = evaluate(valData, 20);
+const valLossQuantized = evaluate(valData, 40);
 for (const key of PARAM_KEYS as readonly ParamKey[]) params[key] = exact[key];
+
+// Keep the unpacked weights around so the losses can be re-measured without
+// paying for another training run.
+writeFileSync(
+  join(CACHE_DIR, "params-float32.json"),
+  JSON.stringify(
+    Object.fromEntries(
+      (PARAM_KEYS as readonly ParamKey[]).map((key) => [
+        key,
+        Array.from(exact[key]),
+      ]),
+    ),
+  ),
+);
 
 console.log(
   `val loss after int8 packing ${valLossQuantized.toFixed(4)} ` +
