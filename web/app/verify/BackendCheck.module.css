@@ -1,0 +1,30 @@
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.verdict {
+  margin: 0.4rem 0 0.9rem;
+  font-size: 1.2rem;
+}
+
+.table {
+  margin-bottom: 1.4rem;
+}
+
+.table td:first-child {
+  width: 11rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.value {
+  font-family: var(--font-mono);
+  color: var(--shell);
+  overflow-wrap: anywhere;
+}

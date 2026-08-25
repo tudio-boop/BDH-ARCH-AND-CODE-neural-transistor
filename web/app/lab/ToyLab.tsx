@@ -1,16 +1,24 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  createBackend,
+  createCpuBackend,
+  type BdhBackend,
+} from "@/lib/bdh/backend";
+import { mulberry32 } from "@/lib/bdh/linalg";
 import { paramCount, TOY_CONFIG, type ToyParams } from "@/lib/bdh/model";
 import {
   decodeBytesForDisplay,
   encodeBytes,
   kvCacheFloats,
   rhoFloats,
-  ToySession,
+  sampleFromLogits,
   type StepTrace,
 } from "@/lib/bdh/recurrent";
+import type { BackendComparison } from "@/lib/bdh/selfcheck";
 import { loadToyWeights, type ToyWeightsFile } from "@/lib/bdh/weights";
 import { formatCount, TOTAL_PARAMS } from "@/lib/facts";
 import { NeuronGrid } from "./NeuronGrid";
@@ -37,15 +45,6 @@ const VIEWS: { id: View; label: string; blurb: string }[] = [
   },
 ];
 
-interface RunState {
-  session: ToySession;
-  bytes: Uint8Array;
-  read: number;
-  produced: number[];
-  logits: Float32Array | null;
-  options: { maxNew: number; temperature: number; topK: number };
-}
-
 type Fractions = Record<View, number>;
 
 function signed(delta: number): string {
@@ -65,6 +64,10 @@ function positiveFractions(trace: StepTrace): Fractions {
   }
   const total = trace.layers.length * TOY_CONFIG.n;
   return { x: x / total, gate: gate / total, y: y / total };
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
 export function ToyLab() {
@@ -87,8 +90,23 @@ export function ToyLab() {
   const [tokensSeen, setTokensSeen] = useState(0);
   const [activity, setActivity] = useState<Fractions[]>([]);
 
-  const runRef = useRef<RunState | null>(null);
-  const frameRef = useRef<number | null>(null);
+  const [backendLabel, setBackendLabel] = useState<string | null>(null);
+  const [backendDetail, setBackendDetail] = useState<string | null>(null);
+  const [comparison, setComparison] = useState<BackendComparison | null>(null);
+
+  const backendRef = useRef<BdhBackend | null>(null);
+  const runIdRef = useRef(0);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      runIdRef.current += 1;
+      backendRef.current?.dispose();
+      backendRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -101,81 +119,122 @@ export function ToyLab() {
     return () => controller.abort();
   }, []);
 
-  const stop = useCallback(() => {
-    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-    frameRef.current = null;
-  }, []);
-
-  useEffect(() => stop, [stop]);
-
-  const tick = useCallback(() => {
-    const run = runRef.current;
-    if (!run) return;
-
-    const record = (next: StepTrace) => {
-      run.logits = next.logits;
-      setTrace(next);
-      setTokensSeen(run.session.position);
-      setActivity((previous) => [...previous, positiveFractions(next)]);
-    };
-
-    if (run.read < run.bytes.length) {
-      record(run.session.feed(run.bytes[run.read], true));
-      run.read += 1;
-      if (run.read >= run.bytes.length) setPhase("writing");
-      frameRef.current = requestAnimationFrame(tick);
-      return;
-    }
-
-    if (run.produced.length >= run.options.maxNew || !run.logits) {
-      setPhase("done");
-      frameRef.current = null;
-      return;
-    }
-
-    const next = run.session.sample(run.logits, {
-      temperature: run.options.temperature,
-      topK: run.options.topK,
+  // Pick a backend once the weights are in: WebGPU when the browser has it and
+  // it agrees with the CPU reference, CPU otherwise.
+  useEffect(() => {
+    if (!weights) return;
+    let cancelled = false;
+    void createBackend(weights.params, TOY_CONFIG).then((selection) => {
+      if (cancelled || !mountedRef.current) {
+        selection.backend.dispose();
+        return;
+      }
+      backendRef.current = selection.backend;
+      setBackendLabel(selection.backend.label);
+      setBackendDetail(selection.backend.detail);
+      setComparison(selection.comparison);
     });
-    run.produced.push(next);
-    setOutBytes([...run.produced]);
-    record(run.session.feed(next, true));
-    frameRef.current = requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+    };
+  }, [weights]);
+
+  const publish = useCallback((step: StepTrace, position: number) => {
+    setTrace(step);
+    setTokensSeen(position);
+    setActivity((previous) => [...previous, positiveFractions(step)]);
   }, []);
+
+  const run = useCallback(
+    async (attempt = 0): Promise<void> => {
+      const backend = backendRef.current;
+      if (!backend || !weights) return;
+      const bytes = encodeBytes(prompt);
+      if (bytes.length === 0) return;
+
+      const runId = ++runIdRef.current;
+      const alive = () => runIdRef.current === runId && mountedRef.current;
+
+      backend.reset();
+      setOutBytes([]);
+      setActivity([]);
+      setTrace(null);
+      setTokensSeen(0);
+      setPhase("reading");
+
+      const rand = mulberry32(seed);
+      const options = { temperature, topK };
+      let logits: Float32Array | null = null;
+
+      const step = async (token: number): Promise<StepTrace> => {
+        const result = await backend.step(token, true);
+        publish(result, backend.position);
+        return result;
+      };
+
+      try {
+        for (const token of bytes) {
+          if (!alive()) return;
+          await nextFrame();
+          if (!alive()) return;
+          logits = (await step(token)).logits;
+        }
+        if (!alive()) return;
+        setPhase("writing");
+
+        const produced: number[] = [];
+        while (produced.length < maxNew && logits) {
+          if (!alive()) return;
+          await nextFrame();
+          if (!alive()) return;
+          const next = sampleFromLogits(logits, options, rand);
+          produced.push(next);
+          setOutBytes([...produced]);
+          logits = (await step(next)).logits;
+        }
+        if (alive()) setPhase("done");
+      } catch (cause) {
+        if (!alive()) return;
+        const message = cause instanceof Error ? cause.message : String(cause);
+        // A GPU that fails mid-run is not worth retrying: drop to the CPU path
+        // and start the run again so rho is rebuilt from the first byte.
+        if (backend.kind === "webgpu" && attempt === 0) {
+          backend.dispose();
+          backendRef.current = createCpuBackend(
+            weights.params,
+            TOY_CONFIG,
+            `WebGPU failed while running: ${message}`,
+          );
+          setBackendLabel("CPU");
+          setBackendDetail(`WebGPU failed while running: ${message}`);
+          setComparison(null);
+          await run(attempt + 1);
+          return;
+        }
+        setPhase("idle");
+        setError(message);
+      }
+    },
+    [weights, prompt, seed, temperature, topK, maxNew, publish],
+  );
 
   const start = useCallback(() => {
-    if (!weights) return;
-    const bytes = encodeBytes(prompt);
-    if (bytes.length === 0) return;
-    stop();
-    runRef.current = {
-      session: new ToySession(weights.params, TOY_CONFIG, seed),
-      bytes,
-      read: 0,
-      produced: [],
-      logits: null,
-      options: { maxNew, temperature, topK },
-    };
-    setOutBytes([]);
-    setActivity([]);
-    setTrace(null);
-    setTokensSeen(0);
-    setPhase("reading");
-    frameRef.current = requestAnimationFrame(tick);
-  }, [weights, prompt, seed, maxNew, temperature, topK, stop, tick]);
+    void run(0);
+  }, [run]);
 
   const reset = useCallback(() => {
-    stop();
-    runRef.current = null;
+    runIdRef.current += 1;
+    backendRef.current?.reset();
     setPhase("idle");
     setOutBytes([]);
     setActivity([]);
     setTrace(null);
     setTokensSeen(0);
-  }, [stop]);
+  }, []);
 
   const promptBytes = useMemo(() => Array.from(encodeBytes(prompt)), [prompt]);
   const busy = phase === "reading" || phase === "writing";
+  const ready = backendLabel !== null;
   const toyParams = paramCount(TOY_CONFIG);
   const stateFloats = rhoFloats(TOY_CONFIG);
   const cacheFloats = kvCacheFloats(TOY_CONFIG, tokensSeen);
@@ -187,7 +246,7 @@ export function ToyLab() {
       <div className="card">
         <p className="label label-ember">Could not start</p>
         <p className="dim" style={{ marginBottom: 0 }}>
-          The trained weights failed to load: {error}. They live at{" "}
+          {error}. The weights live at{" "}
           <code>web/public/bdh-toy-weights.json</code> and are regenerated with{" "}
           <code>npm run toy:train</code>.
         </p>
@@ -197,6 +256,33 @@ export function ToyLab() {
 
   return (
     <div className={styles.lab}>
+      <div className={styles.statusBar}>
+        <span
+          className={[
+            styles.status,
+            backendLabel === "WebGPU" ? styles.statusGpu : "",
+            backendLabel === "CPU" ? styles.statusCpu : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
+          <span className={styles.statusDot} />
+          {backendLabel === null ? "selecting compute…" : backendLabel}
+        </span>
+        {backendDetail ? (
+          <span className={styles.statusDetail}>{backendDetail}</span>
+        ) : null}
+        {comparison ? (
+          <span className={styles.statusDetail}>
+            matches CPU to {comparison.relativeToScale.toExponential(1)} relative
+            over {comparison.tokens} bytes
+          </span>
+        ) : null}
+        <Link href="/verify" className={styles.statusLink}>
+          full check
+        </Link>
+      </div>
+
       <div className={`card card-ember ${styles.controls}`}>
         <div className={styles.promptRow}>
           <label className={styles.field}>
@@ -214,9 +300,9 @@ export function ToyLab() {
             <button
               className="button"
               onClick={start}
-              disabled={!weights || promptBytes.length === 0}
+              disabled={!ready || promptBytes.length === 0}
             >
-              {busy ? "Running…" : weights ? "Generate" : "Loading weights…"}
+              {busy ? "Running…" : ready ? "Generate" : "Loading model…"}
             </button>
             <button
               className="button button-ghost"
@@ -277,7 +363,7 @@ export function ToyLab() {
                   phase === "reading" && trace?.position === index
                     ? styles.byteActive
                     : "",
-                  (phase === "writing" || phase === "done") ? styles.byteRead : "",
+                  phase === "writing" || phase === "done" ? styles.byteRead : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -305,9 +391,7 @@ export function ToyLab() {
                   ? "Generating"
                   : "Output"}
           </p>
-          <span className="pill">
-            {tokensSeen} bytes through the state
-          </span>
+          <span className="pill">{tokensSeen} bytes through the state</span>
         </div>
         <pre className={`sample ${styles.sampleBox}`}>
           <span className={styles.promptText}>{prompt}</span>
@@ -330,7 +414,11 @@ export function ToyLab() {
             </p>
             <p className={styles.neuronsBlurb}>{activeView.blurb}</p>
           </div>
-          <div className={styles.toggle} role="group" aria-label="Which vector to show">
+          <div
+            className={styles.toggle}
+            role="group"
+            aria-label="Which vector to show"
+          >
             {VIEWS.map((option) => (
               <button
                 key={option.id}
@@ -415,6 +503,28 @@ export function ToyLab() {
               <table className={`table ${styles.factTable}`}>
                 <tbody>
                   <tr>
+                    <td className="dim">compute</td>
+                    <td className={styles.factValue}>
+                      {backendLabel ?? "selecting…"}
+                      {backendDetail ? (
+                        <span className="dim"> — {backendDetail}</span>
+                      ) : null}
+                    </td>
+                  </tr>
+                  {comparison ? (
+                    <tr>
+                      <td className="dim">gpu vs cpu</td>
+                      <td className={styles.factValue}>
+                        max {comparison.maxAbsolute.toExponential(2)} on logits of
+                        scale {comparison.logitScale.toFixed(1)} (
+                        {comparison.relativeToScale.toExponential(1)} relative),
+                        same top-1 byte at{" "}
+                        {comparison.tokens - comparison.argmaxDisagreements}/
+                        {comparison.tokens} positions
+                      </td>
+                    </tr>
+                  ) : null}
+                  <tr>
                     <td className="dim">shape</td>
                     <td className={styles.factValue}>
                       n = {TOY_CONFIG.n}, d = {TOY_CONFIG.d},{" "}
@@ -453,7 +563,8 @@ export function ToyLab() {
                     <td className={styles.factValue}>
                       val {weights.file.training.valLossInt8.toFixed(4)}{" "}
                       <span className="dim">
-                        ({signed(
+                        (
+                        {signed(
                           weights.file.training.valLossInt8 -
                             weights.file.training.valLoss,
                         )}{" "}
@@ -522,8 +633,7 @@ function ActivityStrip({ series, view }: { series: Fractions[]; view: View }) {
             className={styles.activityBar}
             style={{
               height: `${
-                12 +
-                Math.max(0, Math.min(1, (value - low) / spread)) * 88
+                12 + Math.max(0, Math.min(1, (value - low) / spread)) * 88
               }%`,
             }}
           />
@@ -594,7 +704,9 @@ function MeterRow({
       </div>
       <div className={styles.meterTrack}>
         <div
-          className={tone === "ember" ? styles.meterFillEmber : styles.meterFillCool}
+          className={
+            tone === "ember" ? styles.meterFillEmber : styles.meterFillCool
+          }
           style={{ width: `${Math.min(100, (value / max) * 100)}%` }}
         />
       </div>
