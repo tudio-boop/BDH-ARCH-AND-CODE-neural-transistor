@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "toy:gradcheck": "tsx scripts/gradcheck.ts",
     "toy:check": "tsx scripts/check-equivalence.ts",
+    "toy:check-webgpu": "deno run --allow-read --unstable-webgpu --unstable-sloppy-imports --no-check scripts/check-webgpu.ts",
     "toy:train": "tsx scripts/train-toy.ts",
     "toy:export-ref": "tsx scripts/export-reference-case.ts"
   },

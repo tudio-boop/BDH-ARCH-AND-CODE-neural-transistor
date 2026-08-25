@@ -16,7 +16,9 @@
  *   VK_ICD_FILENAMES=/opt/google/chrome/vk_swiftshader_icd.json deno run ...
  */
 
+import { createBackend } from "../lib/bdh/backend";
 import { TOY_CONFIG } from "../lib/bdh/model";
+import { encodeBytes } from "../lib/bdh/recurrent";
 import { compareToCpu } from "../lib/bdh/selfcheck";
 import { dequantizeParams, type ToyWeightsFile } from "../lib/bdh/weights";
 import { requestGpuContext, WebGpuSession } from "../lib/bdh/webgpu/backend";
@@ -80,7 +82,28 @@ async function main(): Promise<void> {
     );
     throw new Error("backends disagree");
   }
-  console.log("\nPASS: WebGPU matches the CPU reference");
+
+  // Exercise the selection path the lab actually calls, not just the pieces.
+  const selection = await createBackend(params, config);
+  console.log(
+    `\ncreateBackend() chose "${selection.backend.kind}"` +
+      (selection.fallbackReason ? ` (${selection.fallbackReason})` : ""),
+  );
+  const probe = encodeBytes("To be or ");
+  for (const token of probe) await selection.backend.step(token, true);
+  const last = await selection.backend.step(probe[0], true);
+  console.log(
+    `  stepped ${selection.backend.position} bytes; ` +
+      `layer traces: ${last.layers.length}, logits: ${last.logits.length}`,
+  );
+  selection.backend.dispose();
+
+  if (selection.backend.kind !== "webgpu") {
+    console.error("\nFAIL: a working WebGPU device was not selected");
+    throw new Error("backend selection did not choose WebGPU");
+  }
+
+  console.log("\nPASS: WebGPU matches the CPU reference and is the chosen backend");
 }
 
 await main();
